@@ -1,0 +1,717 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum CompanyStatus {
+  PROSPECT
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
+enum ContactType {
+  DECISION_MAKER
+  BILLING
+  TECHNICAL
+  PROJECT
+  ADMIN
+  GENERAL
+}
+
+enum ContactStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  UNQUALIFIED
+  CONVERTED
+  LOST
+}
+
+enum LeadSource {
+  WEBSITE
+  REFERRAL
+  SOCIAL_MEDIA
+  ADVERTISEMENT
+  EMAIL
+  PHONE
+  COLD_OUTREACH
+  PARTNER
+  EXISTING_CUSTOMER
+  OTHER
+}
+
+enum LeadPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum CustomerStatus {
+  ONBOARDING
+  ACTIVE
+  INACTIVE
+  CHURNED
+  BLOCKED
+}
+
+enum CustomerType {
+  BUSINESS
+  INDIVIDUAL
+}
+
+enum OpportunityPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum RequirementStatus {
+  DRAFT
+  GATHERING
+  ANALYSIS
+  CONFIRMED
+  READY_FOR_QUOTATION
+  CANCELLED
+}
+
+enum RequirementPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ActivityType {
+  CALL
+  EMAIL
+  MEETING
+  NOTE
+  WHATSAPP
+  DEMO
+  SITE_VISIT
+  OTHER
+}
+
+enum FollowUpStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  MISSED
+  CANCELLED
+}
+
+enum FollowUpPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  RESTORE
+  CONVERT
+  ASSIGN
+  STATUS_CHANGE
+  STAGE_CHANGE
+}
+
+enum OutboxEventStatus {
+  PENDING
+  PUBLISHED
+  FAILED
+}
+
+// ============================================================
+// COMPANY
+// ============================================================
+
+model Company {
+  id                 String        @id @default(uuid())
+  companyCode        String        @unique
+  name               String
+  legalName          String?
+  industry           String?
+  website            String?
+  email              String?
+  phone              String?
+  alternatePhone     String?
+  address            String?
+  city               String?
+  state              String?
+  country            String?
+  postalCode         String?
+  taxNumber          String?
+  registrationNumber String?
+  status             CompanyStatus @default(PROSPECT)
+  source             String?
+  notes              String?
+  createdBy          String?
+  updatedBy          String?
+  deletedBy          String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  deletedAt          DateTime?
+
+  // Relations
+  contacts      Contact[]
+  leads         Lead[]
+  customers     Customer[]
+  opportunities Opportunity[]
+  activities    Activity[]
+  followUps     FollowUp[]
+  requirements  Requirement[]
+  documents     Document[]
+  entityTags    EntityTag[]
+
+  @@index([status])
+  @@index([email])
+  @@index([name])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("companies")
+}
+
+// ============================================================
+// CONTACT
+// ============================================================
+
+model Contact {
+  id               String        @id @default(uuid())
+  companyId        String?
+  firstName        String
+  lastName         String
+  email            String
+  secondaryEmail   String?
+  phone            String?
+  alternatePhone   String?
+  designation      String?
+  department       String?
+  contactType      ContactType   @default(GENERAL)
+  isPrimary        Boolean       @default(false)
+  isBillingContact Boolean       @default(false)
+  isTechnicalContact Boolean     @default(false)
+  isDecisionMaker  Boolean       @default(false)
+  status           ContactStatus @default(ACTIVE)
+  notes            String?
+  createdBy        String?
+  updatedBy        String?
+  deletedBy        String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  deletedAt        DateTime?
+
+  // Relations
+  company       Company?      @relation(fields: [companyId], references: [id])
+  leads         Lead[]        @relation("ContactLeads")
+  customers     Customer[]    @relation("PrimaryContact")
+  opportunities Opportunity[]
+  activities    Activity[]
+  followUps     FollowUp[]
+  requirements  Requirement[]
+  documents     Document[]
+  entityTags    EntityTag[]
+
+  @@unique([email, deletedAt], name: "unique_active_email")
+  @@index([companyId])
+  @@index([email])
+  @@index([status])
+  @@index([contactType])
+  @@index([deletedAt])
+  @@map("contacts")
+}
+
+// ============================================================
+// LEAD
+// ============================================================
+
+model Lead {
+  id                   String       @id @default(uuid())
+  leadCode             String       @unique
+  firstName            String
+  lastName             String
+  email                String
+  phone                String?
+  companyName          String?
+  companyId            String?
+  contactId            String?
+  source               LeadSource   @default(WEBSITE)
+  sourceDetails        String?
+  industry             String?
+  interest             String?
+  description          String?
+  estimatedValue       Decimal?     @db.Decimal(18, 2)
+  currency             String       @default("USD")
+  status               LeadStatus   @default(NEW)
+  priority             LeadPriority @default(MEDIUM)
+  assignedTo           String?
+  createdBy            String?
+  updatedBy            String?
+  deletedBy            String?
+  expectedCloseDate    DateTime?
+  lastContactedAt      DateTime?
+  convertedAt          DateTime?
+  convertedCustomerId  String?
+  convertedCompanyId   String?
+  convertedContactId   String?
+  lostReason           String?
+  notes                String?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  deletedAt            DateTime?
+
+  // Relations
+  company       Company?      @relation(fields: [companyId], references: [id])
+  contact       Contact?      @relation("ContactLeads", fields: [contactId], references: [id])
+  opportunities Opportunity[]
+  activities    Activity[]
+  followUps     FollowUp[]
+  requirements  Requirement[]
+  entityTags    EntityTag[]
+
+  @@index([status])
+  @@index([priority])
+  @@index([source])
+  @@index([assignedTo])
+  @@index([companyId])
+  @@index([email])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("leads")
+}
+
+// ============================================================
+// CUSTOMER
+// ============================================================
+
+model Customer {
+  id               String         @id @default(uuid())
+  customerCode     String         @unique
+  companyId        String
+  primaryContactId String?
+  accountManagerId String?
+  status           CustomerStatus @default(ONBOARDING)
+  customerType     CustomerType   @default(BUSINESS)
+  customerSince    DateTime       @default(now())
+  notes            String?
+  // External service references (read-only identifiers, no data owned)
+  billingCustomerId String?
+  salesCustomerId   String?
+  createdBy        String?
+  updatedBy        String?
+  deletedBy        String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  deletedAt        DateTime?
+
+  // Relations
+  company        Company         @relation(fields: [companyId], references: [id])
+  primaryContact Contact?        @relation("PrimaryContact", fields: [primaryContactId], references: [id])
+  opportunities  Opportunity[]
+  activities     Activity[]
+  followUps      FollowUp[]
+  requirements   Requirement[]
+  documents      Document[]
+  entityTags     EntityTag[]
+
+  @@index([companyId])
+  @@index([primaryContactId])
+  @@index([accountManagerId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("customers")
+}
+
+// ============================================================
+// PIPELINE
+// ============================================================
+
+model Pipeline {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  isDefault   Boolean  @default(false)
+  createdBy   String?
+  updatedBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  stages        PipelineStage[]
+  opportunities Opportunity[]
+
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("pipelines")
+}
+
+model PipelineStage {
+  id          String   @id @default(uuid())
+  pipelineId  String
+  name        String
+  description String?
+  position    Int
+  probability Int      @default(0)
+  color       String   @default("#6366f1")
+  isWon       Boolean  @default(false)
+  isLost      Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  pipeline      Pipeline      @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  opportunities Opportunity[]
+
+  @@unique([pipelineId, name])
+  @@unique([pipelineId, position])
+  @@index([pipelineId])
+  @@index([isActive])
+  @@map("pipeline_stages")
+}
+
+// ============================================================
+// OPPORTUNITY
+// ============================================================
+
+model Opportunity {
+  id                 String              @id @default(uuid())
+  opportunityCode    String              @unique
+  leadId             String?
+  customerId         String?
+  companyId          String?
+  contactId          String?
+  pipelineId         String
+  stageId            String
+  title              String
+  description        String?
+  estimatedValue     Decimal?            @db.Decimal(18, 2)
+  currency           String              @default("USD")
+  probability        Int                 @default(0)
+  weightedValue      Decimal?            @db.Decimal(18, 2)
+  priority           OpportunityPriority @default(MEDIUM)
+  expectedCloseDate  DateTime?
+  assignedTo         String?
+  source             LeadSource?
+  lostReason         String?
+  closedAt           DateTime?
+  createdBy          String?
+  updatedBy          String?
+  deletedBy          String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  deletedAt          DateTime?
+
+  // Relations
+  lead      Lead?          @relation(fields: [leadId], references: [id])
+  customer  Customer?      @relation(fields: [customerId], references: [id])
+  company   Company?       @relation(fields: [companyId], references: [id])
+  contact   Contact?       @relation(fields: [contactId], references: [id])
+  pipeline  Pipeline       @relation(fields: [pipelineId], references: [id])
+  stage     PipelineStage  @relation(fields: [stageId], references: [id])
+  activities    Activity[]
+  followUps     FollowUp[]
+  requirements  Requirement[]
+  documents     Document[]
+  entityTags    EntityTag[]
+
+  @@index([leadId])
+  @@index([customerId])
+  @@index([companyId])
+  @@index([stageId])
+  @@index([pipelineId])
+  @@index([assignedTo])
+  @@index([expectedCloseDate])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("opportunities")
+}
+
+// ============================================================
+// REQUIREMENT
+// ============================================================
+
+model Requirement {
+  id                    String              @id @default(uuid())
+  requirementCode       String              @unique
+  opportunityId         String?
+  leadId                String?
+  customerId            String?
+  companyId             String
+  contactId             String?
+  title                 String
+  description           String?
+  businessRequirement   String?
+  technicalRequirement  String?
+  scope                 String?
+  deliverables          String?
+  priority              RequirementPriority @default(MEDIUM)
+  status                RequirementStatus   @default(DRAFT)
+  estimatedValue        Decimal?            @db.Decimal(18, 2)
+  currency              String              @default("USD")
+  estimatedHours        Decimal?            @db.Decimal(10, 2)
+  expectedDeliveryDate  DateTime?
+  assignedTo            String?
+  createdBy             String?
+  updatedBy             String?
+  deletedBy             String?
+  confirmedAt           DateTime?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  deletedAt             DateTime?
+
+  // Relations
+  opportunity Opportunity? @relation(fields: [opportunityId], references: [id])
+  lead        Lead?        @relation(fields: [leadId], references: [id])
+  customer    Customer?    @relation(fields: [customerId], references: [id])
+  company     Company      @relation(fields: [companyId], references: [id])
+  contact     Contact?     @relation(fields: [contactId], references: [id])
+  documents   Document[]
+
+  @@index([opportunityId])
+  @@index([leadId])
+  @@index([customerId])
+  @@index([companyId])
+  @@index([assignedTo])
+  @@index([status])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("requirements")
+}
+
+// ============================================================
+// ACTIVITY
+// ============================================================
+
+model Activity {
+  id             String       @id @default(uuid())
+  type           ActivityType
+  subject        String
+  description    String?
+  leadId         String?
+  companyId      String?
+  contactId      String?
+  customerId     String?
+  opportunityId  String?
+  assignedTo     String?
+  createdBy      String?
+  updatedBy      String?
+  deletedBy      String?
+  activityDate   DateTime
+  duration       Int?         // in minutes
+  outcome        String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+
+  // Relations
+  lead        Lead?        @relation(fields: [leadId], references: [id])
+  company     Company?     @relation(fields: [companyId], references: [id])
+  contact     Contact?     @relation(fields: [contactId], references: [id])
+  customer    Customer?    @relation(fields: [customerId], references: [id])
+  opportunity Opportunity? @relation(fields: [opportunityId], references: [id])
+
+  @@index([leadId])
+  @@index([companyId])
+  @@index([contactId])
+  @@index([customerId])
+  @@index([opportunityId])
+  @@index([assignedTo])
+  @@index([activityDate])
+  @@index([deletedAt])
+  @@map("activities")
+}
+
+// ============================================================
+// FOLLOW-UP
+// ============================================================
+
+model FollowUp {
+  id             String           @id @default(uuid())
+  title          String
+  description    String?
+  leadId         String?
+  companyId      String?
+  contactId      String?
+  customerId     String?
+  opportunityId  String?
+  assignedTo     String?
+  dueDate        DateTime
+  priority       FollowUpPriority @default(MEDIUM)
+  status         FollowUpStatus   @default(PENDING)
+  completedAt    DateTime?
+  completedBy    String?
+  reminderAt     DateTime?
+  notes          String?
+  createdBy      String?
+  updatedBy      String?
+  deletedBy      String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  deletedAt      DateTime?
+
+  // Relations
+  lead        Lead?        @relation(fields: [leadId], references: [id])
+  company     Company?     @relation(fields: [companyId], references: [id])
+  contact     Contact?     @relation(fields: [contactId], references: [id])
+  customer    Customer?    @relation(fields: [customerId], references: [id])
+  opportunity Opportunity? @relation(fields: [opportunityId], references: [id])
+
+  @@index([leadId])
+  @@index([companyId])
+  @@index([contactId])
+  @@index([customerId])
+  @@index([opportunityId])
+  @@index([assignedTo])
+  @@index([dueDate])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("follow_ups")
+}
+
+// ============================================================
+// TAG
+// ============================================================
+
+model Tag {
+  id        String      @id @default(uuid())
+  name      String      @unique
+  color     String      @default("#6366f1")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  entityTags EntityTag[]
+
+  @@map("tags")
+}
+
+model EntityTag {
+  id          String   @id @default(uuid())
+  tagId       String
+  entityType  String   // LEAD, COMPANY, CONTACT, CUSTOMER, OPPORTUNITY
+  entityId    String
+  companyId   String?
+  contactId   String?
+  customerId  String?
+  leadId      String?
+  opportunityId String?
+  createdAt   DateTime @default(now())
+
+  tag         Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  company     Company?     @relation(fields: [companyId], references: [id])
+  contact     Contact?     @relation(fields: [contactId], references: [id])
+  customer    Customer?    @relation(fields: [customerId], references: [id])
+  lead        Lead?        @relation(fields: [leadId], references: [id])
+  opportunity Opportunity? @relation(fields: [opportunityId], references: [id])
+
+  @@unique([tagId, entityType, entityId])
+  @@index([entityType, entityId])
+  @@map("entity_tags")
+}
+
+// ============================================================
+// DOCUMENT
+// ============================================================
+
+model Document {
+  id             String    @id @default(uuid())
+  customerId     String?
+  companyId      String?
+  contactId      String?
+  opportunityId  String?
+  requirementId  String?
+  name           String
+  documentType   String
+  storageKey     String
+  mimeType       String?
+  size           BigInt?
+  uploadedBy     String?
+  createdBy      String?
+  updatedBy      String?
+  deletedBy      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  // Relations
+  customer    Customer?    @relation(fields: [customerId], references: [id])
+  company     Company?     @relation(fields: [companyId], references: [id])
+  contact     Contact?     @relation(fields: [contactId], references: [id])
+  opportunity Opportunity? @relation(fields: [opportunityId], references: [id])
+  requirement Requirement? @relation(fields: [requirementId], references: [id])
+
+  @@index([customerId])
+  @@index([companyId])
+  @@index([contactId])
+  @@index([opportunityId])
+  @@index([requirementId])
+  @@index([deletedAt])
+  @@map("documents")
+}
+
+// ============================================================
+// AUDIT LOG
+// ============================================================
+
+model AuditLog {
+  id          String      @id @default(uuid())
+  entityType  String
+  entityId    String
+  action      AuditAction
+  performedBy String?
+  oldData     Json?
+  newData     Json?
+  metadata    Json?
+  timestamp   DateTime    @default(now())
+
+  @@index([entityType, entityId])
+  @@index([performedBy])
+  @@index([timestamp])
+  @@map("audit_logs")
+}
+
+// ============================================================
+// OUTBOX EVENTS (Transactional Outbox Pattern)
+// ============================================================
+
+model OutboxEvent {
+  id          String            @id @default(uuid())
+  eventId     String            @unique @default(uuid())
+  eventType   String
+  version     Int               @default(1)
+  source      String            @default("crm-service")
+  payload     Json
+  status      OutboxEventStatus @default(PENDING)
+  attempts    Int               @default(0)
+  lastError   String?
+  publishedAt DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([eventType])
+  @@map("outbox_events")
+}
