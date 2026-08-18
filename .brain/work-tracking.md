@@ -10,7 +10,7 @@
 
 | Phase | Scope | Platform | Status |
 |---|---|---|---|
-| Phase 0 | Auth, RBAC, tenant, base settings | CRM | ⬜ |
+| Phase 0 | Auth, RBAC, tenant, base settings | CRM | ✅ |
 | Phase 1 | Leads, Opportunities, Companies/Contacts, Activities, Customer 360 | CRM | 🔄 Partial |
 | Phase 2 | Service Catalog, Plans, Quotation, Contract, Order, Subscription | CRM | ⬜ |
 | Phase 3 | Invoices, Payments, Expenses, Vendors, Purchasing/Assets | CRM | ⬜ |
@@ -33,18 +33,18 @@
 
 | # | Module | Feature | Description | Priority | Status |
 |---|---|---|---|---|---|
-| 1 | Auth | User Registration & Login | Email/password registration with hashed passwords, login returns JWT access token (15-min) and refresh token (30-day in Redis/DB). Foundation for all authenticated access. | P0 | ⬜ |
-| 2 | Auth | Token Refresh & Logout | Refresh endpoint issues new access token using valid refresh token. Logout invalidates refresh token. Keeps sessions alive without re-login. | P0 | ⬜ |
-| 3 | Auth | Password Reset Flow | 'Forgot password' sends a time-limited reset token to email (or shows link in dev mode). User sets a new password. | P1 | ⬜ |
-| 4 | RBAC | Role & Permission Seed | Pre-seeds the default roles (Super Admin, Admin, Sales Manager, Sales Rep, Account Manager, Finance, Support, Operations) with their permission sets so RBAC works from first login. | P0 | ⬜ |
-| 5 | RBAC | Permission Guard (Enforcement) | Every API request checked: role + module + action (view/create/edit/delete/approve). Unauthorized requests rejected with 403. | P0 | ⬜ |
-| 6 | Tenant | Organization (Tenant) Setup | Creates the first tenant record (company name, branding basics). All data is scoped to a tenant_id from this point. | P0 | ⬜ |
-| 7 | Tenant | Tenant Isolation (Row-Level) | Every DB query automatically filters by tenant_id, so one tenant never sees another's data — enforced at the Prisma/query layer, not just the API. | P0 | ⬜ |
-| 8 | Settings | Base Settings Page | Simple key-value settings (company name, default currency, fiscal year, date format, timezone). Stored in a Settings table, loaded once on app start. | P1 | ⬜ |
-| 9 | User Mgmt | Invite User | Admin invites a new user by email, assigning a role. User receives a link to set their password and activate their account. | P1 | ⬜ |
-| 10 | User Mgmt | User List & Deactivation | Lists all users with role, status, last login. Admin can deactivate (not delete) a user, which blocks login but preserves audit history. | P1 | ⬜ |
-| 11 | User Mgmt | User Profile | Any user can update their own name, phone, avatar, and change password — nothing else (no role self-change). | P2 | ⬜ |
-| 12 | Audit | Audit Log Foundation | Automatically records every create/update/delete across all modules — who did it, when, what changed (before/after JSON). Queryable for compliance and debugging. | P0 | ⬜ |
+| 1 | Auth | User Registration & Login | Email/password registration with hashed passwords, login returns JWT access token (15-min) and refresh token (30-day in Redis/DB). Foundation for all authenticated access. | P0 | ✅ |
+| 2 | Auth | Token Refresh & Logout | Refresh endpoint issues new access token using valid refresh token. Logout invalidates refresh token. Keeps sessions alive without re-login. | P0 | ✅ |
+| 3 | Auth | Password Reset Flow | 'Forgot password' sends a time-limited reset token to email (or shows link in dev mode). User sets a new password. | P1 | ✅ |
+| 4 | RBAC | Role & Permission Seed | Pre-seeds the default roles (Super Admin, Admin, Sales Manager, Sales Rep, Account Manager, Finance, Support, Operations) with their permission sets so RBAC works from first login. | P0 | ✅ |
+| 5 | RBAC | Permission Guard (Enforcement) | Every API request checked: role + module + action (view/create/edit/delete/approve). Unauthorized requests rejected with 403. | P0 | ✅ |
+| 6 | Tenant | Organization (Tenant) Setup | Creates the first tenant record (company name, branding basics). All data is scoped to a tenant_id from this point. | P0 | ✅ |
+| 7 | Tenant | Tenant Isolation (Row-Level) | Every DB query automatically filters by tenant_id, so one tenant never sees another's data — enforced at the Prisma/query layer, not just the API. | P0 | ✅ |
+| 8 | Settings | Base Settings Page | Simple key-value settings (company name, default currency, fiscal year, date format, timezone). Stored in a Settings table, loaded once on app start. | P1 | ✅ |
+| 9 | User Mgmt | Invite User | Admin invites a new user by email, assigning a role. User receives a link to set their password and activate their account. | P1 | ✅ |
+| 10 | User Mgmt | User List & Deactivation | Lists all users with role, status, last login. Admin can deactivate (not delete) a user, which blocks login but preserves audit history. | P1 | ✅ |
+| 11 | User Mgmt | User Profile | Any user can update their own name, phone, avatar, and change password — nothing else (no role self-change). | P2 | ✅ |
+| 12 | Audit | Audit Log Foundation | Automatically records every create/update/delete across all modules — who did it, when, what changed (before/after JSON). Queryable for compliance and debugging. | P0 | ✅ |
 
 ---
 

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -6,8 +6,16 @@ import { PrismaModule } from './prisma/prisma.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { PermissionsGuard } from './common/guards/permissions.guard';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { AuditModule } from './audit/audit.module';
 import { OutboxModule } from './events/outbox.module';
+import { MailModule } from './mail/mail.module';
+import { AuthModule } from './auth/auth.module';
+import { TenantModule } from './tenant/tenant.module';
+import { RbacModule } from './rbac/rbac.module';
+import { UsersModule } from './users/users.module';
+import { SettingsModule } from './settings/settings.module';
+import { TenantContextMiddleware } from './common/tenant-context/tenant-context.middleware';
 
 // Domain Modules
 import { CompaniesModule } from './companies/companies.module';
@@ -29,6 +37,12 @@ import { DashboardModule } from './dashboard/dashboard.module';
     PrismaModule,
     AuditModule,
     OutboxModule,
+    MailModule,
+    AuthModule,
+    TenantModule,
+    RbacModule,
+    UsersModule,
+    SettingsModule,
     CompaniesModule,
     ContactsModule,
     CustomersModule,
@@ -48,7 +62,12 @@ import { DashboardModule } from './dashboard/dashboard.module';
     AppService,
     { provide: APP_FILTER, useClass: GlobalExceptionFilter },
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: PermissionsGuard },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(TenantContextMiddleware).forRoutes('*');
+  }
+}
