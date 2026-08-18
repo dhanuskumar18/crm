@@ -4,6 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev:web": "npm --prefix apps/web run dev",
+    "dev:gateway": "npm --prefix apps/api-gateway run start:dev",
+    "dev:crm": "npm --prefix apps/crm-service run start:dev",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
